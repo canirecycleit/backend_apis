@@ -2,3 +2,6 @@ mlflow
 scikit-learn
 fastapi
 uvicorn
+python-multipart
+tensorflow
+Pillow

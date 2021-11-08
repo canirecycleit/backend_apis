@@ -8,4 +8,4 @@ RUN python -m pip install --upgrade pip
 RUN pip install --upgrade -r requirements.txt
 
 # Run the command on container startup
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--reload", "--port", "80"]
