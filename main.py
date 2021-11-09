@@ -5,10 +5,20 @@ import mlflow.keras
 import numpy as np
 from fastapi import FastAPI, File, UploadFile
 from mlflow.tracking import MlflowClient
+from starlette.middleware.cors import CORSMiddleware
 
 from ciri_api.utils import read_imagefile
 
 app = FastAPI()
+
+# Enable CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=False,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
