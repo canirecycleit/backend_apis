@@ -20,6 +20,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+model = None
+
 
 @app.get("/")
 async def root():
@@ -44,7 +46,9 @@ async def predict(file: UploadFile = File(...)):
     model_stage = "Production"
 
     # TODO: Cache this so don't have to reload from disk:
-    model = mlflow.keras.load_model(model_uri=f"models:/{model_name}/{model_stage}")
+    global model
+    if not model:
+        model = mlflow.keras.load_model(model_uri=f"models:/{model_name}/{model_stage}")
 
     client = MlflowClient()
 
