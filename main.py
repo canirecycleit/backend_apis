@@ -7,6 +7,7 @@ from fastapi import FastAPI, File, UploadFile
 from mlflow.tracking import MlflowClient
 from starlette.middleware.cors import CORSMiddleware
 
+import ciri_api.settings as settings
 from ciri_api.utils import read_imagefile
 
 app = FastAPI()
@@ -21,6 +22,17 @@ app.add_middleware(
 )
 
 model = None
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Cache model at start-up."""
+
+    global model
+    if not model:
+        model = mlflow.keras.load_model(
+            model_uri=f"models:/{settings.MODEL_NAME}/{settings.MODEL_STAGE}"
+        )
 
 
 @app.get("/")
@@ -45,10 +57,11 @@ async def predict(file: UploadFile = File(...)):
     model_name = "ciri_trashnet_model"
     model_stage = "Production"
 
-    # TODO: Cache this so don't have to reload from disk:
     global model
     if not model:
-        model = mlflow.keras.load_model(model_uri=f"models:/{model_name}/{model_stage}")
+        model = mlflow.keras.load_model(
+            model_uri=f"models:/{settings.MODEL_NAME}/{settings.MODEL_STAGE}"
+        )
 
     client = MlflowClient()
 
