@@ -1,55 +1,60 @@
-from io import BytesIO
+import json
+import os
 
 import mlflow.keras
 import numpy as np
 from fastapi import FastAPI, File, UploadFile
 from mlflow.tracking import MlflowClient
-from PIL import Image
+
+from ciri_api.utils import read_imagefile
 
 app = FastAPI()
-
-model = None
 
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World!"}
+    return {"message": "CIRI Application APIs"}
 
 
-@app.get("/list")
+@app.get("/models/list")
 async def list_models():
+    """Lists available models registered in MLFlow."""
     client = MlflowClient()
     return client.list_registered_models()
 
 
-def read_imagefile(file) -> Image.Image:
-    image = Image.open(BytesIO(file))
-    return image
-
-
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
+    """Provides a class prediction based on uploaded image."""
+
+    # Convert uploaded file into image for prediction:
     image = read_imagefile(await file.read())
 
-    image_width = 256
-    image_height = 192
-
-    image = np.asarray(image.resize((image_width, image_height)))[..., :3]
-    image = np.expand_dims(image, 0)
-    image = image / 127.5 - 1.0
-
     model_name = "ciri_trashnet_model"
-    model_version = 1
+    model_stage = "Production"
 
-    global model
-    if not model:
-        model = mlflow.keras.load_model(
-            model_uri=f"models:/{model_name}/{model_version}"
-        )
+    # TODO: Cache this so don't have to reload from disk:
+    model = mlflow.keras.load_model(model_uri=f"models:/{model_name}/{model_stage}")
+
+    client = MlflowClient()
+
+    model_artifact_store = ""
+    for mv in client.search_model_versions(f"name='{model_name}'"):
+        if mv.current_stage == model_stage:
+            model_artifact_store = os.path.split(mv.source)[0]
 
     pred = model.predict(image)
-    class_index = np.argmax(pred, axis=1)[0]
     print(pred)
+    class_index = int(np.argmax(pred, axis=1)[0])
     print(class_index)
 
-    return {"prediction": int(class_index)}
+    if model_artifact_store:
+        label_mapping_file = os.path.join(model_artifact_store, "mapping.json")
+        index2label = {}
+        with open(label_mapping_file, "r") as f:
+            index2label = json.loads(f.read())
+
+        class_index = index2label[str(class_index)]
+
+    print(class_index)
+    return {"prediction": class_index}
