@@ -47,6 +47,16 @@ async def list_models():
     return client.list_registered_models()
 
 
+@app.get("/models/load")
+async def load_model(model_name: str, model_stage: str):
+    """Loads a particular model for application use."""
+
+    global model
+    model = mlflow.keras.load_model(model_uri=f"models:/{model_name}/{model_stage}")
+
+    return {"status": "success", "model_name": model_name, "model_stage": model_stage}
+
+
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     """Provides a class prediction based on uploaded image."""
