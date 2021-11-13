@@ -22,6 +22,7 @@ app.add_middleware(
 )
 
 model = None
+index2label = {}
 
 
 @app.on_event("startup")
@@ -29,10 +30,28 @@ async def startup_event():
     """Cache model at start-up."""
 
     global model
+    global index2label
+
+    client = MlflowClient()
+
+    # Initialize model from artifact-store:
     if not model:
         model = mlflow.keras.load_model(
             model_uri=f"models:/{settings.MODEL_NAME}/{settings.MODEL_STAGE}"
         )
+
+    # Get associated model artifacts:
+    model_artifact_store = ""
+    for mv in client.search_model_versions(f"name='{settings.MODEL_STAGE}'"):
+        if mv.current_stage == settings.MODEL_STAGE:
+            model_artifact_store = os.path.split(mv.source)[0]
+
+    # Load mapping file from artifact store:
+    if model_artifact_store:
+        label_mapping_file = os.path.join(model_artifact_store, "mapping.json")
+        index2label = {}
+        with open(label_mapping_file, "r") as f:
+            index2label = json.loads(f.read())
 
 
 @app.get("/")
@@ -64,34 +83,18 @@ async def predict(file: UploadFile = File(...)):
     # Convert uploaded file into image for prediction:
     image = read_imagefile(await file.read())
 
-    model_name = "ciri_trashnet_model"
-    model_stage = "Production"
-
     global model
-    if not model:
-        model = mlflow.keras.load_model(
-            model_uri=f"models:/{settings.MODEL_NAME}/{settings.MODEL_STAGE}"
-        )
-
-    client = MlflowClient()
-
-    model_artifact_store = ""
-    for mv in client.search_model_versions(f"name='{model_name}'"):
-        if mv.current_stage == model_stage:
-            model_artifact_store = os.path.split(mv.source)[0]
+    global index2label
 
     pred = model.predict(image)
-    print(pred)
+    print(f"Prediction: {pred}")
+
     class_index = int(np.argmax(pred, axis=1)[0])
-    print(class_index)
+    print(f"Class index: {class_index}")
 
-    if model_artifact_store:
-        label_mapping_file = os.path.join(model_artifact_store, "mapping.json")
-        index2label = {}
-        with open(label_mapping_file, "r") as f:
-            index2label = json.loads(f.read())
-
-        class_index = index2label[str(class_index)]
+    # Convert index to label if available:
+    if index2label:
+        class_index = index2label.get(str(class_index), str(class_index))
 
     print(class_index)
     return {"prediction": class_index}
