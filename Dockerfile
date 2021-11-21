@@ -11,5 +11,7 @@ RUN python -m pip install --upgrade pip
 RUN --mount=type=cache,target=/root/.cache \
     pip install -e .
 
+EXPOSE 8080
+
 # Run the command on container startup
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--reload", "--port", "80"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--reload", "--port", "8080"]
