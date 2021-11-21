@@ -30,6 +30,14 @@ index2label = {}
 @app.on_event("startup")
 async def startup_event():
     """Cache model at start-up."""
+    try:
+        initialize_model()
+    except Exception as exc:
+        print(str(exc))
+
+
+def initialize_model():
+    """Initialize and cache model data."""
 
     global model
     global index2label
@@ -90,6 +98,9 @@ async def predict(file: UploadFile = File(...)):
 
     global model
     global index2label
+
+    if not model or not index2label:
+        initialize_model()
 
     pred = model.predict(image)
     print(f"Prediction: {pred}")
