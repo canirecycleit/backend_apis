@@ -7,3 +7,4 @@ tensorflow
 python-dotenv
 Pillow
 starlette
+google-cloud-storage

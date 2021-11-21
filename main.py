@@ -4,6 +4,8 @@ import os
 import mlflow.keras
 import numpy as np
 from fastapi import FastAPI, File, UploadFile
+from google.cloud import storage
+from google.cloud.storage import Blob
 from mlflow.tracking import MlflowClient
 from starlette.middleware.cors import CORSMiddleware
 
@@ -42,16 +44,19 @@ async def startup_event():
 
     # Get associated model artifacts:
     model_artifact_store = ""
-    for mv in client.search_model_versions(f"name='{settings.MODEL_STAGE}'"):
+    for mv in client.search_model_versions(f"name='{settings.MODEL_NAME}'"):
         if mv.current_stage == settings.MODEL_STAGE:
             model_artifact_store = os.path.split(mv.source)[0]
 
     # Load mapping file from artifact store:
     if model_artifact_store:
+
         label_mapping_file = os.path.join(model_artifact_store, "mapping.json")
         index2label = {}
-        with open(label_mapping_file, "r") as f:
-            index2label = json.loads(f.read())
+
+        storage_client = storage.Client()
+        blob = Blob.from_string(label_mapping_file, client=storage_client)
+        index2label = json.loads(blob.download_as_string())
 
 
 @app.get("/")
