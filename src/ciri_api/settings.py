@@ -15,3 +15,7 @@ IMAGE_HEIGHT = os.environ.get("IMAGE_HEIGHT", 192)
 # Model metadata:
 MODEL_NAME = os.environ.get("MODEL_NAME", "ciri_trashnet_model")
 MODEL_STAGE = os.environ.get("MODEL_STAGE", "Production")
+
+# Image Store
+GCS_PROJECT_NAME = os.environ.get("GCS_PROJECT_NAME", "CIRI")
+GCS_DATA_BUCKET = os.environ.get("GCS_DATA_BUCKET", "canirecycleit-data")

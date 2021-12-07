@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 import mlflow.keras
 import numpy as np
@@ -114,3 +115,18 @@ async def predict(file: UploadFile = File(...)):
 
     print(class_index)
     return {"prediction": class_index}
+
+
+@app.post("/image/upload")
+async def upload(category: str, file: UploadFile = File(...)):
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(settings.GCS_DATA_BUCKET)
+
+    # Create file name based on current timestamp (ms):
+    file_name_ms = str(time.time() * 1000)
+    _, file_ext = os.path.splitext(file.filename)
+    blob_name = os.path.join(category, file_name_ms + file_ext)
+    blob = bucket.blob(blob_name=)
+
+    blob.upload_from_file(file)
+    return {"bucket": settings.GCS_DATA_BUCKET, "file": blob_name }
