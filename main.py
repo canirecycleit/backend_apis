@@ -126,7 +126,8 @@ async def upload(category: str, file: UploadFile = File(...)):
     file_name_ms = str(time.time() * 1000)
     _, file_ext = os.path.splitext(file.filename)
     blob_name = os.path.join(category, file_name_ms + file_ext)
-    blob = bucket.blob(blob_name=)
+    blob = bucket.blob(blob_name)
 
-    blob.upload_from_file(file)
-    return {"bucket": settings.GCS_DATA_BUCKET, "file": blob_name }
+    # Upload file to blob:
+    blob.upload_from_file(file.file)
+    return {"bucket": settings.GCS_DATA_BUCKET, "file": blob_name}
