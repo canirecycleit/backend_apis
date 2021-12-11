@@ -125,7 +125,7 @@ async def upload(category: str, file: UploadFile = File(...)):
     # Create file name based on current timestamp (ms):
     file_name_ms = str(time.time() * 1000)
     _, file_ext = os.path.splitext(file.filename)
-    blob_name = os.path.join(category, file_name_ms + file_ext)
+    blob_name = os.path.join(category, file_name_ms + file_ext) + ".jpg"
     blob = bucket.blob(blob_name)
 
     # Upload file to blob:
